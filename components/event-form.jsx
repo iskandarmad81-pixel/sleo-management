@@ -1,19 +1,10 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { Event } from "@/app/dashboard/events/page"
 
-interface EventFormProps {
-  event?: Event | null
-  onSubmit: (data: Omit<Event, "id">) => void
-  onCancel: () => void
-}
-
-export default function EventForm({ event, onSubmit, onCancel }: EventFormProps) {
+export default function EventForm({ event, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -32,7 +23,7 @@ export default function EventForm({ event, onSubmit, onCancel }: EventFormProps)
     }
   }, [event])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
     onSubmit(formData)
   }

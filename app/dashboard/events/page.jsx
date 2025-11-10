@@ -11,20 +11,10 @@ import EventForm from "@/components/event-form"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
-export interface Event {
-  _id?: string
-  id?: string
-  name: string
-  description?: string
-  date: string
-  location?: string
-  volunteers?: any[]
-}
-
 export default function EventsPage() {
-  const [events, setEvents] = useState<Event[]>([])
+  const [events, setEvents] = useState([])
   const [showForm, setShowForm] = useState(false)
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null)
+  const [editingEvent, setEditingEvent] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -48,7 +38,7 @@ export default function EventsPage() {
       })
       if (response.ok) {
         const data = await response.json()
-        setEvents(data.map((e: any) => ({ ...e, id: e._id })))
+        setEvents(data.map((e) => ({ ...e, id: e._id })))
       }
     } catch (err) {
       console.error("Error fetching events:", err)
@@ -57,7 +47,7 @@ export default function EventsPage() {
     }
   }
 
-  const handleAddEvent = async (formData: Omit<Event, "id">) => {
+  const handleAddEvent = async (formData) => {
     try {
       const response = await fetch(`${API_URL}/api/events`, {
         method: "POST",
@@ -76,7 +66,7 @@ export default function EventsPage() {
     }
   }
 
-  const handleUpdateEvent = async (formData: Omit<Event, "id">) => {
+  const handleUpdateEvent = async (formData) => {
     if (!editingEvent) return
     try {
       const eventId = editingEvent._id || editingEvent.id
@@ -98,7 +88,7 @@ export default function EventsPage() {
     }
   }
 
-  const handleDeleteEvent = async (id: string) => {
+  const handleDeleteEvent = async (id) => {
     try {
       const response = await fetch(`${API_URL}/api/events/${id}`, {
         method: "DELETE",
@@ -112,7 +102,7 @@ export default function EventsPage() {
     }
   }
 
-  const handleEdit = (event: Event) => {
+  const handleEdit = (event) => {
     setEditingEvent(event)
     setShowForm(true)
   }
@@ -143,7 +133,6 @@ export default function EventsPage() {
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto p-4 md:p-8">
-          {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-4xl font-bold text-foreground">События</h1>
@@ -160,7 +149,6 @@ export default function EventsPage() {
             </Button>
           </div>
 
-          {/* Search */}
           <div className="mb-6">
             <Input
               placeholder="Поиск по названию или месту..."
@@ -170,7 +158,6 @@ export default function EventsPage() {
             />
           </div>
 
-          {/* Form */}
           {showForm && (
             <Card className="mb-8 p-6">
               <EventForm
@@ -184,7 +171,6 @@ export default function EventsPage() {
             </Card>
           )}
 
-          {/* List */}
           <EventList events={filteredEvents} onEdit={handleEdit} onDelete={handleDeleteEvent} />
         </div>
       </main>

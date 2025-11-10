@@ -1,19 +1,10 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import type { Volunteer } from "@/app/dashboard/page"
 
-interface VolunteerFormProps {
-  volunteer?: Volunteer | null
-  onSubmit: (data: Omit<Volunteer, "id">) => void
-  onCancel: () => void
-}
-
-export default function VolunteerForm({ volunteer, onSubmit, onCancel }: VolunteerFormProps) {
+export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     name: "",
     telegram: "",
@@ -34,7 +25,7 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }: Volunte
     }
   }, [volunteer])
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault()
     onSubmit(formData)
   }

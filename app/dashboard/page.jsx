@@ -11,21 +11,10 @@ import VolunteerForm from "@/components/volunteer-form"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
 
-export interface Volunteer {
-  _id?: string
-  id?: string
-  name: string
-  telegram: string
-  phone: string
-  skills: string
-  joinDate: string
-  events?: any[]
-}
-
 export default function DashboardPage() {
-  const [volunteers, setVolunteers] = useState<Volunteer[]>([])
+  const [volunteers, setVolunteers] = useState([])
   const [showForm, setShowForm] = useState(false)
-  const [editingVolunteer, setEditingVolunteer] = useState<Volunteer | null>(null)
+  const [editingVolunteer, setEditingVolunteer] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
   const router = useRouter()
@@ -49,7 +38,7 @@ export default function DashboardPage() {
       })
       if (response.ok) {
         const data = await response.json()
-        setVolunteers(data.map((v: any) => ({ ...v, id: v._id })))
+        setVolunteers(data.map((v) => ({ ...v, id: v._id })))
       }
     } catch (err) {
       console.error("Error fetching volunteers:", err)
@@ -58,7 +47,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handleAddVolunteer = async (formData: Omit<Volunteer, "id">) => {
+  const handleAddVolunteer = async (formData) => {
     try {
       const response = await fetch(`${API_URL}/api/volunteers`, {
         method: "POST",
@@ -77,7 +66,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handleUpdateVolunteer = async (formData: Omit<Volunteer, "id">) => {
+  const handleUpdateVolunteer = async (formData) => {
     if (!editingVolunteer) return
     try {
       const volunteerId = editingVolunteer._id || editingVolunteer.id
@@ -99,7 +88,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handleDeleteVolunteer = async (id: string) => {
+  const handleDeleteVolunteer = async (id) => {
     try {
       const response = await fetch(`${API_URL}/api/volunteers/${id}`, {
         method: "DELETE",
@@ -113,7 +102,7 @@ export default function DashboardPage() {
     }
   }
 
-  const handleEdit = (volunteer: Volunteer) => {
+  const handleEdit = (volunteer) => {
     setEditingVolunteer(volunteer)
     setShowForm(true)
   }
@@ -144,7 +133,6 @@ export default function DashboardPage() {
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto p-4 md:p-8">
-          {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-4xl font-bold text-foreground">Волонтеры</h1>
@@ -161,7 +149,6 @@ export default function DashboardPage() {
             </Button>
           </div>
 
-          {/* Search */}
           <div className="mb-6">
             <Input
               placeholder="Поиск по имени или Telegram..."
@@ -171,7 +158,6 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Form */}
           {showForm && (
             <Card className="mb-8 p-6">
               <VolunteerForm
@@ -185,7 +171,6 @@ export default function DashboardPage() {
             </Card>
           )}
 
-          {/* List */}
           <VolunteerList volunteers={filteredVolunteers} onEdit={handleEdit} onDelete={handleDeleteVolunteer} />
         </div>
       </main>

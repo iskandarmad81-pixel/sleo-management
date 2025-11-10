@@ -5,12 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 
-interface NavigationProps {
-  onLogout: () => void
-  currentPage?: "volunteers" | "events"
-}
-
-export default function Navigation({ onLogout, currentPage }: NavigationProps) {
+export default function Navigation({ onLogout, currentPage }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userTelegram, setUserTelegram] = useState("")
   const router = useRouter()
@@ -19,12 +14,10 @@ export default function Navigation({ onLogout, currentPage }: NavigationProps) {
   useEffect(() => {
     const telegram = localStorage.getItem("sleo_telegram")
     setUserTelegram(telegram || "")
-
-    // Close mobile menu when route changes
     setMobileMenuOpen(false)
   }, [pathname])
 
-  const handleNavigate = (path: string) => {
+  const handleNavigate = (path) => {
     router.push(path)
     setMobileMenuOpen(false)
   }
@@ -36,7 +29,6 @@ export default function Navigation({ onLogout, currentPage }: NavigationProps) {
     <nav className="bg-card border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <button
             onClick={() => handleNavigate("/dashboard")}
             className="text-2xl font-bold text-primary hover:opacity-80 transition-opacity duration-200"
@@ -44,9 +36,7 @@ export default function Navigation({ onLogout, currentPage }: NavigationProps) {
             SLEO
           </button>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-8">
-            {/* Navigation Links */}
             <div className="flex items-center gap-6">
               <button
                 onClick={() => handleNavigate("/dashboard")}
@@ -70,7 +60,6 @@ export default function Navigation({ onLogout, currentPage }: NavigationProps) {
               </button>
             </div>
 
-            {/* User Section */}
             <div className="flex items-center gap-4 border-l border-border pl-6">
               <span className="text-sm text-muted-foreground truncate max-w-xs">{userTelegram}</span>
               <Button
@@ -86,7 +75,6 @@ export default function Navigation({ onLogout, currentPage }: NavigationProps) {
             </div>
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden text-foreground p-2 hover:bg-muted rounded-lg transition-colors"
@@ -96,11 +84,9 @@ export default function Navigation({ onLogout, currentPage }: NavigationProps) {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 border-t border-border animate-in fade-in duration-200">
             <div className="flex flex-col gap-2 pt-4">
-              {/* Mobile Navigation Links */}
               <button
                 onClick={() => handleNavigate("/dashboard")}
                 className={`text-sm font-medium text-left px-3 py-3 rounded-lg transition-colors duration-200 ${
@@ -122,7 +108,6 @@ export default function Navigation({ onLogout, currentPage }: NavigationProps) {
                 События
               </button>
 
-              {/* Mobile User Section */}
               <div className="border-t border-border pt-3 mt-2">
                 <div className="px-3 pb-3">
                   <span className="text-xs text-muted-foreground truncate block">{userTelegram}</span>

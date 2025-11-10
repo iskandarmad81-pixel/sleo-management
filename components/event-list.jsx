@@ -4,15 +4,8 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Edit2, Trash2, MapPin, Calendar, ChevronRight } from "lucide-react"
-import type { Event } from "@/app/dashboard/events/page"
 
-interface EventListProps {
-  events: Event[]
-  onEdit: (event: Event) => void
-  onDelete: (id: string) => void
-}
-
-export default function EventList({ events, onEdit, onDelete }: EventListProps) {
+export default function EventList({ events, onEdit, onDelete }) {
   const router = useRouter()
 
   if (events.length === 0) {
