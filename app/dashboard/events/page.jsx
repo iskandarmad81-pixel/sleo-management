@@ -19,6 +19,8 @@ export default function EventsPage() {
   const [loading, setLoading] = useState(true)
   const [sendingList, setSendingList] = useState(false)
   const [sendMessage, setSendMessage] = useState("")
+  const [selectedVolunteers, setSelectedVolunteers] = useState([])
+  const [allVolunteers, setAllVolunteers] = useState([])
   const router = useRouter()
 
   const getToken = () => localStorage.getItem("sleo_token")
@@ -30,6 +32,7 @@ export default function EventsPage() {
       return
     }
     fetchEvents()
+    fetchAllVolunteers()
   }, [router])
 
   const fetchEvents = async () => {
@@ -46,6 +49,20 @@ export default function EventsPage() {
       console.error("Error fetching events:", err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchAllVolunteers = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/volunteers`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAllVolunteers(data.map((v) => ({ ...v, id: v._id })))
+      }
+    } catch (err) {
+      console.error("Error fetching volunteers:", err)
     }
   }
 
@@ -110,6 +127,12 @@ export default function EventsPage() {
   }
 
   const handleSendEventsList = async () => {
+    if (selectedVolunteers.length === 0) {
+      setSendMessage("⚠️ Выберите волонтеров для отправки")
+      setTimeout(() => setSendMessage(""), 3000)
+      return
+    }
+
     try {
       setSendingList(true)
       setSendMessage("")
@@ -120,11 +143,14 @@ export default function EventsPage() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
+        body: JSON.stringify({ volunteerIds: selectedVolunteers }),
       })
 
       if (response.ok) {
         const data = await response.json()
         setSendMessage(`✅ Список отправлен ${data.sentTo} волонтерам`)
+        setSelectedVolunteers([])
+        setShowVolunteerModal(false)
         setTimeout(() => setSendMessage(""), 3000)
       } else {
         setSendMessage("❌ Ошибка при отправке списка")
@@ -135,6 +161,14 @@ export default function EventsPage() {
     } finally {
       setSendingList(false)
     }
+  }
+
+  const toggleVolunteerSelection = (volunteerId) => {
+    setSelectedVolunteers((prev) =>
+      prev.includes(volunteerId)
+        ? prev.filter((id) => id !== volunteerId)
+        : [...prev, volunteerId]
+    )
   }
 
   const filteredEvents = events.filter(
@@ -170,11 +204,10 @@ export default function EventsPage() {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={handleSendEventsList}
-                disabled={sendingList}
+                onClick={() => setShowVolunteerModal(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white w-fit"
               >
-                {sendingList ? "Отправляю..." : "📢 Отправить список"}
+                📢 Отправить список
               </Button>
               <Button
                 onClick={() => {

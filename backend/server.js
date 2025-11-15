@@ -268,6 +268,8 @@ app.post("/api/bot/send-events-list", authMiddleware, async (req, res) => {
       return res.status(400).json({ error: "Telegram bot токен не установлен" })
     }
 
+    const { volunteerIds } = req.body
+    
     const bot = new TelegramBot(TELEGRAM_BOT_TOKEN)
     const events = await Event.find().populate("volunteers")
     
@@ -280,23 +282,19 @@ app.post("/api/bot/send-events-list", authMiddleware, async (req, res) => {
       eventsList += `${index + 1}. <b>${event.name}</b>\n📅 ${event.date}\n📍 ${event.location || "Не указано"}\n👥 Волонтеры: ${event.volunteers.length}\n\n`
     })
 
-    // Отправляем сообщение всем волонтерам
     let sentCount = 0
-    const volunteerSet = new Set()
     
-    for (const event of events) {
-      for (const volunteer of event.volunteers) {
-        volunteerSet.add(volunteer.telegram)
-      }
-    }
-
-    for (const telegramHandle of volunteerSet) {
-      try {
-        await bot.sendMessage(telegramHandle, eventsList, { parse_mode: "HTML" })
-        sentCount++
-        console.log(`[API] Events list sent to ${telegramHandle}`)
-      } catch (err) {
-        console.error(`[API] Failed to send to ${telegramHandle}:`, err.message)
+    if (volunteerIds && volunteerIds.length > 0) {
+      const volunteers = await Volunteer.find({ _id: { $in: volunteerIds } })
+      
+      for (const volunteer of volunteers) {
+        try {
+          await bot.sendMessage(volunteer.telegram, eventsList, { parse_mode: "HTML" })
+          sentCount++
+          console.log(`[API] Events list sent to ${volunteer.telegram}`)
+        } catch (err) {
+          console.error(`[API] Failed to send to ${volunteer.telegram}:`, err.message)
+        }
       }
     }
 
