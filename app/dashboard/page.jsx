@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,8 @@ export default function DashboardPage() {
   const [editingVolunteer, setEditingVolunteer] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formError, setFormError] = useState("")
   const router = useRouter()
 
   const getToken = () => localStorage.getItem("sleo_token")
@@ -29,6 +31,7 @@ export default function DashboardPage() {
     }
     fetchVolunteers()
   }, [router])
+
 
   const fetchVolunteers = async () => {
     try {
@@ -48,7 +51,12 @@ export default function DashboardPage() {
   }
 
   const handleAddVolunteer = async (formData) => {
+    if (isSubmitting) return
+
     try {
+      setIsSubmitting(true)
+      setFormError("")
+
       const response = await fetch(`${API_URL}/api/volunteers`, {
         method: "POST",
         headers: {
@@ -57,18 +65,30 @@ export default function DashboardPage() {
         },
         body: JSON.stringify(formData),
       })
+
       if (response.ok) {
         await fetchVolunteers()
         setShowForm(false)
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Ошибка при добавлении волонтера")
       }
     } catch (err) {
       console.error("Error adding volunteer:", err)
+      setFormError(err.message)
+      throw err
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleUpdateVolunteer = async (formData) => {
-    if (!editingVolunteer) return
+    if (!editingVolunteer || isSubmitting) return
+
     try {
+      setIsSubmitting(true)
+      setFormError("")
+
       const volunteerId = editingVolunteer._id || editingVolunteer.id
       const response = await fetch(`${API_URL}/api/volunteers/${volunteerId}`, {
         method: "PUT",
@@ -78,18 +98,29 @@ export default function DashboardPage() {
         },
         body: JSON.stringify(formData),
       })
+
       if (response.ok) {
         await fetchVolunteers()
         setEditingVolunteer(null)
         setShowForm(false)
+      } else {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Ошибка при обновлении волонтера")
       }
     } catch (err) {
       console.error("Error updating volunteer:", err)
+      setFormError(err.message)
+      throw err
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleDeleteVolunteer = async (id) => {
+    if (isSubmitting) return
+
     try {
+      setIsSubmitting(true)
       const response = await fetch(`${API_URL}/api/volunteers/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${getToken()}` },
@@ -99,12 +130,15 @@ export default function DashboardPage() {
       }
     } catch (err) {
       console.error("Error deleting volunteer:", err)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleEdit = (volunteer) => {
     setEditingVolunteer(volunteer)
     setShowForm(true)
+    setFormError("")
   }
 
   const filteredVolunteers = volunteers.filter(
@@ -142,8 +176,10 @@ export default function DashboardPage() {
               onClick={() => {
                 setEditingVolunteer(null)
                 setShowForm(true)
+                setFormError("")
               }}
               className="bg-primary hover:bg-primary/90 text-primary-foreground w-fit"
+              disabled={isSubmitting}
             >
               Добавить волонтера
             </Button>
@@ -166,6 +202,7 @@ export default function DashboardPage() {
                 onCancel={() => {
                   setShowForm(false)
                   setEditingVolunteer(null)
+                  setFormError("")
                 }}
               />
             </Card>

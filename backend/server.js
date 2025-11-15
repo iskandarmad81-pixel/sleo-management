@@ -27,8 +27,8 @@ const userSchema = new mongoose.Schema({
 
 const volunteerSchema = new mongoose.Schema({
   name: { type: String, required: true },
-  telegram: { type: String, required: true },
-  phone: { type: String },
+  telegram: { type: String, required: true, unique: true },
+  phone: { type: String, unique: true, sparse: true },
   skills: { type: String },
   joinDate: { type: String, required: true },
   events: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
@@ -118,10 +118,29 @@ app.get("/api/volunteers", authMiddleware, async (req, res) => {
 
 app.post("/api/volunteers", authMiddleware, async (req, res) => {
   try {
+    // Проверка на дубликаты перед сохранением
+    const existingTelegram = await Volunteer.findOne({ telegram: req.body.telegram })
+    if (existingTelegram && (!req.body._id || existingTelegram._id.toString() !== req.body._id)) {
+      return res.status(400).json({ error: "Волонтер с таким Telegram уже существует" })
+    }
+
+    const existingPhone = await Volunteer.findOne({ phone: req.body.phone })
+    if (existingPhone && req.body.phone && (!req.body._id || existingPhone._id.toString() !== req.body._id)) {
+      return res.status(400).json({ error: "Волонтер с таким номером телефона уже существует" })
+    }
+
     const volunteer = new Volunteer(req.body)
     await volunteer.save()
     res.json(volunteer)
   } catch (err) {
+    if (err.code === 11000) {
+      const field = Object.keys(err.keyValue)[0]
+      if (field === "telegram") {
+        return res.status(400).json({ error: "Волонтер с таким Telegram уже существует" })
+      } else if (field === "phone") {
+        return res.status(400).json({ error: "Волонтер с таким номером телефона уже существует" })
+      }
+    }
     res.status(400).json({ error: err.message })
   }
 })
