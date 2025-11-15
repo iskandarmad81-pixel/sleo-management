@@ -13,6 +13,9 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
     joinDate: new Date().toISOString().split("T")[0],
   })
 
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
   useEffect(() => {
     if (volunteer) {
       setFormData({
@@ -25,9 +28,27 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
     }
   }, [volunteer])
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    setError("")
+
+    if (!formData.name.trim()) {
+      setError("Имя обязательно")
+      return
+    }
+    if (!formData.telegram.trim()) {
+      setError("Telegram юзернейм обязателен")
+      return
+    }
+
+    setLoading(true)
+    try {
+      await onSubmit(formData)
+    } catch (err) {
+      setError(err.message || "Ошибка при сохранении")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -35,6 +56,8 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
       <h3 className="text-xl font-semibold text-foreground">
         {volunteer ? "Редактировать волонтера" : "Добавить волонтера"}
       </h3>
+
+      {error && <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{error}</div>}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -47,6 +70,7 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
             placeholder="Иван Иванов"
             value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            disabled={loading}
             required
           />
         </div>
@@ -61,6 +85,7 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
             placeholder="@ivan_ivanov"
             value={formData.telegram}
             onChange={(e) => setFormData({ ...formData, telegram: e.target.value })}
+            disabled={loading}
             required
           />
         </div>
@@ -75,6 +100,7 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
             placeholder="+7 (999) 999-9999"
             value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            disabled={loading}
           />
         </div>
 
@@ -87,6 +113,7 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
             type="date"
             value={formData.joinDate}
             onChange={(e) => setFormData({ ...formData, joinDate: e.target.value })}
+            disabled={loading}
             required
           />
         </div>
@@ -101,16 +128,23 @@ export default function VolunteerForm({ volunteer, onSubmit, onCancel }) {
             placeholder="Программирование, дизайн, преподавание..."
             value={formData.skills}
             onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+            disabled={loading}
           />
         </div>
       </div>
 
       <div className="flex gap-3 justify-end">
-        <Button type="button" onClick={onCancel} variant="outline" className="text-foreground bg-transparent">
+        <Button
+          type="button"
+          onClick={onCancel}
+          variant="outline"
+          className="text-foreground bg-transparent"
+          disabled={loading}
+        >
           Отмена
         </Button>
-        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground">
-          {volunteer ? "Сохранить" : "Добавить"}
+        <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground" disabled={loading}>
+          {loading ? "Сохранение..." : volunteer ? "Сохранить" : "Добавить"}
         </Button>
       </div>
     </form>
