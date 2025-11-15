@@ -259,5 +259,52 @@ app.delete("/api/events/:eventId/volunteers/:volunteerId", authMiddleware, async
   }
 })
 
+app.post("/api/bot/send-events-list", authMiddleware, async (req, res) => {
+  try {
+    const TelegramBot = require("node-telegram-bot-api")
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN
+    
+    if (!TELEGRAM_BOT_TOKEN) {
+      return res.status(400).json({ error: "Telegram bot токен не установлен" })
+    }
+
+    const bot = new TelegramBot(TELEGRAM_BOT_TOKEN)
+    const events = await Event.find().populate("volunteers")
+    
+    if (events.length === 0) {
+      return res.json({ message: "Нет событий для отправки", sentTo: 0 })
+    }
+
+    let eventsList = "<b>📋 Список всех событий:</b>\n\n"
+    events.forEach((event, index) => {
+      eventsList += `${index + 1}. <b>${event.name}</b>\n📅 ${event.date}\n📍 ${event.location || "Не указано"}\n👥 Волонтеры: ${event.volunteers.length}\n\n`
+    })
+
+    // Отправляем сообщение всем волонтерам
+    let sentCount = 0
+    const volunteerSet = new Set()
+    
+    for (const event of events) {
+      for (const volunteer of event.volunteers) {
+        volunteerSet.add(volunteer.telegram)
+      }
+    }
+
+    for (const telegramHandle of volunteerSet) {
+      try {
+        await bot.sendMessage(telegramHandle, eventsList, { parse_mode: "HTML" })
+        sentCount++
+        console.log(`[API] Events list sent to ${telegramHandle}`)
+      } catch (err) {
+        console.error(`[API] Failed to send to ${telegramHandle}:`, err.message)
+      }
+    }
+
+    res.json({ message: "Список событий отправлен", sentTo: sentCount })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

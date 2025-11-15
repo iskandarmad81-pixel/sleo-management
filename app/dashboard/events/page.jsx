@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,8 @@ export default function EventsPage() {
   const [editingEvent, setEditingEvent] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [loading, setLoading] = useState(true)
+  const [sendingList, setSendingList] = useState(false)
+  const [sendMessage, setSendMessage] = useState("")
   const router = useRouter()
 
   const getToken = () => localStorage.getItem("sleo_token")
@@ -107,6 +109,34 @@ export default function EventsPage() {
     setShowForm(true)
   }
 
+  const handleSendEventsList = async () => {
+    try {
+      setSendingList(true)
+      setSendMessage("")
+      
+      const response = await fetch(`${API_URL}/api/bot/send-events-list`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSendMessage(`✅ Список отправлен ${data.sentTo} волонтерам`)
+        setTimeout(() => setSendMessage(""), 3000)
+      } else {
+        setSendMessage("❌ Ошибка при отправке списка")
+      }
+    } catch (err) {
+      console.error("Error sending events list:", err)
+      setSendMessage("❌ Ошибка подключения")
+    } finally {
+      setSendingList(false)
+    }
+  }
+
   const filteredEvents = events.filter(
     (e) =>
       e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -138,16 +168,31 @@ export default function EventsPage() {
               <h1 className="text-4xl font-bold text-foreground">События</h1>
               <p className="text-muted-foreground mt-1">Управление событиями SLEO</p>
             </div>
-            <Button
-              onClick={() => {
-                setEditingEvent(null)
-                setShowForm(true)
-              }}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground w-fit"
-            >
-              Добавить событие
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleSendEventsList}
+                disabled={sendingList}
+                className="bg-blue-600 hover:bg-blue-700 text-white w-fit"
+              >
+                {sendingList ? "Отправляю..." : "📢 Отправить список"}
+              </Button>
+              <Button
+                onClick={() => {
+                  setEditingEvent(null)
+                  setShowForm(true)
+                }}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground w-fit"
+              >
+                Добавить событие
+              </Button>
+            </div>
           </div>
+
+          {sendMessage && (
+            <div className="mb-6 p-4 rounded-lg bg-muted text-foreground text-center">
+              {sendMessage}
+            </div>
+          )}
 
           <div className="mb-6">
             <Input

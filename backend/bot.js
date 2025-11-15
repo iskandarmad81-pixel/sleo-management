@@ -70,6 +70,16 @@ async function checkAndSendReminders() {
   }
 }
 
+async function logBotStatus() {
+  try {
+    const volunteerCount = await Volunteer.countDocuments();
+    const eventCount = await Event.countDocuments();
+    console.log(`[BOT] Status: ${volunteerCount} volunteers, ${eventCount} events in database`);
+  } catch (err) {
+    console.error('[BOT] Error getting bot status:', err);
+  }
+}
+
 // Запускается каждый день в 9:00 утра (по времени сервера)
 cron.schedule('0 9 * * *', () => {
   console.log('[BOT] Running daily reminder check...');
@@ -82,43 +92,71 @@ checkAndSendReminders();
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
+  const username = msg.from.username || 'unknown';
+  
+  console.log(`[BOT] Message received from @${username}: ${text}`);
 
   if (text === '/start') {
-    const username = msg.from.username || msg.from.first_name;
+    const firstName = msg.from.first_name || 'User';
+    console.log(`[BOT] /start command from @${username}`);
     bot.sendMessage(
       chatId,
-      `Привет ${username}! 👋\n\nЯ бот системы SLEO для управления волонтерами и событиями.\n\nЯ буду отправлять тебе напоминания за день до событий на которых ты зарегистрирован.\n\n/help - список команд`,
+      `Привет ${firstName}! 👋\n\nТвой Telegram: @${username}\n\nЯ бот системы SLEO для управления волонтерами и событиями.\n\nЯ буду отправлять тебе напоминания за день до событий на которых ты зарегистрирован.\n\n/help - список команд\n/events - твои события\n/status - статус подключения`,
       { parse_mode: 'HTML' }
     );
   } else if (text === '/help') {
+    console.log(`[BOT] /help command from @${username}`);
     bot.sendMessage(
       chatId,
-      `<b>Доступные команды:</b>\n\n/start - Начать работу с ботом\n/events - Показать ближайшие события\n/help - Показать эту справку`,
+      `<b>Доступные команды:</b>\n\n/start - Начать работу с ботом\n/events - Показать ближайшие события\n/status - Статус подключения к системе\n/help - Показать эту справку`,
       { parse_mode: 'HTML' }
     );
+  } else if (text === '/status') {
+    Volunteer.findOne({ telegram: username })
+      .then((volunteer) => {
+        if (volunteer) {
+          console.log(`[BOT] /status - Volunteer found: ${volunteer.name}`);
+          bot.sendMessage(
+            chatId,
+            `✅ Ты зарегистрирован в системе!\n\nТвое имя: ${volunteer.name}\nТелефон: ${volunteer.phone || 'Не указан'}\nНавыки: ${volunteer.skills || 'Не указаны'}\nПрисоединился: ${volunteer.joinDate}`
+          );
+        } else {
+          console.log(`[BOT] /status - Volunteer NOT found for: @${username}`);
+          bot.sendMessage(
+            chatId,
+            `❌ Ты не зарегистрирован в системе волонтеров.\n\nПросите администратора добавить вас с Telegram: @${username}`
+          );
+        }
+      })
+      .catch((err) => console.error('[BOT] Error in /status:', err));
   } else if (text === '/events') {
-    Volunteer.findOne({ telegram: msg.from.username || msg.from.id })
+    console.log(`[BOT] /events command from @${username}`);
+    Volunteer.findOne({ telegram: username })
       .populate('events')
       .then((volunteer) => {
         if (!volunteer) {
-          bot.sendMessage(chatId, 'Ты не зарегистрирован в системе волонтеров');
+          console.log(`[BOT] /events - Volunteer not found: @${username}`);
+          bot.sendMessage(chatId, '❌ Ты не зарегистрирован в системе волонтеров');
           return;
         }
 
         if (volunteer.events.length === 0) {
-          bot.sendMessage(chatId, 'У тебя нет зарегистрированных событий');
+          console.log(`[BOT] /events - No events for: @${username}`);
+          bot.sendMessage(chatId, '📭 У тебя нет зарегистрированных событий');
           return;
         }
 
-        let eventsList = '<b>Твои события:</b>\n\n';
+        console.log(`[BOT] /events - Found ${volunteer.events.length} events for: @${username}`);
+        let eventsList = `<b>Твои события (${volunteer.events.length}):</b>\n\n`;
         volunteer.events.forEach((event, index) => {
           eventsList += `${index + 1}. <b>${event.name}</b>\n📅 ${event.date}\n📍 ${event.location || 'Не указано'}\n\n`;
         });
 
         bot.sendMessage(chatId, eventsList, { parse_mode: 'HTML' });
       })
-      .catch((err) => console.error('[BOT] Error fetching volunteer events:', err));
+      .catch((err) => console.error('[BOT] Error in /events:', err));
   } else {
+    console.log(`[BOT] Unknown command from @${username}`);
     bot.sendMessage(
       chatId,
       'Я не понимаю эту команду. Напиши /help для списка доступных команд.'
