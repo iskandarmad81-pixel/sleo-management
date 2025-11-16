@@ -48,11 +48,11 @@ console.log('[BOT] Telegram bot started');
 
 /* ========================= GROUP LIST FROM .ENV ========================= */
 
-const GROUP_LIST = process.env.GROUP_IDS
+const GROUP_IDS = process.env.GROUP_IDS
   ? process.env.GROUP_IDS.split(',').map((id) => id.trim())
   : [];
 
-console.log('[BOT] Loaded groups from .env:', GROUP_LIST);
+console.log('[BOT] Loaded groups from .env:', GROUP_IDS);
 
 /* =============================================================
    SEND EVENTS LIST TO ALL GROUPS FROM .ENV
@@ -60,7 +60,7 @@ console.log('[BOT] Loaded groups from .env:', GROUP_LIST);
 
 async function sendEventsListToGroups() {
   try {
-    if (GROUP_LIST.length === 0) {
+    if (GROUP_IDS.length === 0) {
       console.log('[BOT] No groups in GROUP_IDS');
       return;
     }
@@ -76,7 +76,7 @@ async function sendEventsListToGroups() {
         )
         .join("\n");
 
-    for (const chatId of GROUP_LIST) {
+    for (const chatId of GROUP_IDS) {
       try {
         await bot.sendMessage(chatId, message, { parse_mode: "HTML" });
         console.log(`[BOT] Sent events list to group ${chatId}`);
