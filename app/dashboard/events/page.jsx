@@ -1,195 +1,163 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { useRouter } from 'next/navigation'
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import Navigation from "@/components/navigation"
-import EventList from "@/components/event-list"
-import EventForm from "@/components/event-form"
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import Navigation from '@/components/navigation';
+import EventList from '@/components/event-list';
+import EventForm from '@/components/event-form';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function EventsPage() {
-  const [events, setEvents] = useState([])
-  const [showForm, setShowForm] = useState(false)
-  const [editingEvent, setEditingEvent] = useState(null)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [loading, setLoading] = useState(true)
-  const [sendingList, setSendingList] = useState(false)
-  const [sendMessage, setSendMessage] = useState("")
-  const [selectedVolunteers, setSelectedVolunteers] = useState([])
-  const [allVolunteers, setAllVolunteers] = useState([])
-  const [showVolunteerModal, setShowVolunteerModal] = useState(false) // Added missing state for volunteer modal
-  const router = useRouter()
+  const [events, setEvents] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sendingList, setSendingList] = useState(false);
+  const [sendMessage, setSendMessage] = useState('');
+  const [showVolunteerModal, setShowVolunteerModal] = useState(false); // Added missing state for volunteer modal
+  const router = useRouter();
 
-  const getToken = () => localStorage.getItem("sleo_token")
+  const getToken = () => localStorage.getItem('sleo_token');
 
   useEffect(() => {
-    const token = getToken()
+    const token = getToken();
     if (!token) {
-      router.push("/")
-      return
+      router.push('/');
+      return;
     }
-    fetchEvents()
-    fetchAllVolunteers()
-  }, [router])
+    fetchEvents();
+  }, [router]);
 
   const fetchEvents = async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const response = await fetch(`${API_URL}/api/events`, {
         headers: { Authorization: `Bearer ${getToken()}` },
-      })
+      });
       if (response.ok) {
-        const data = await response.json()
-        setEvents(data.map((e) => ({ ...e, id: e._id })))
+        const data = await response.json();
+        setEvents(data.map((e) => ({ ...e, id: e._id })));
       }
     } catch (err) {
-      console.error("Error fetching events:", err)
+      console.error('Error fetching events:', err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const fetchAllVolunteers = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/volunteers`, {
-        headers: { Authorization: `Bearer ${getToken()}` },
-      })
-      if (response.ok) {
-        const data = await response.json()
-        setAllVolunteers(data.map((v) => ({ ...v, id: v._id })))
-      }
-    } catch (err) {
-      console.error("Error fetching volunteers:", err)
-    }
-  }
 
   const handleAddEvent = async (formData) => {
     try {
       const response = await fetch(`${API_URL}/api/events`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify(formData),
-      })
+      });
       if (response.ok) {
-        await fetchEvents()
-        setShowForm(false)
+        await fetchEvents();
+        setShowForm(false);
       }
     } catch (err) {
-      console.error("Error adding event:", err)
+      console.error('Error adding event:', err);
     }
-  }
+  };
 
   const handleUpdateEvent = async (formData) => {
-    if (!editingEvent) return
+    if (!editingEvent) return;
     try {
-      const eventId = editingEvent._id || editingEvent.id
+      const eventId = editingEvent._id || editingEvent.id;
       const response = await fetch(`${API_URL}/api/events/${eventId}`, {
-        method: "PUT",
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${getToken()}`,
         },
         body: JSON.stringify(formData),
-      })
+      });
       if (response.ok) {
-        await fetchEvents()
-        setEditingEvent(null)
-        setShowForm(false)
+        await fetchEvents();
+        setEditingEvent(null);
+        setShowForm(false);
       }
     } catch (err) {
-      console.error("Error updating event:", err)
+      console.error('Error updating event:', err);
     }
-  }
+  };
 
   const handleDeleteEvent = async (id) => {
     try {
       const response = await fetch(`${API_URL}/api/events/${id}`, {
-        method: "DELETE",
+        method: 'DELETE',
         headers: { Authorization: `Bearer ${getToken()}` },
-      })
+      });
       if (response.ok) {
-        await fetchEvents()
+        await fetchEvents();
       }
     } catch (err) {
-      console.error("Error deleting event:", err)
+      console.error('Error deleting event:', err);
     }
-  }
+  };
 
   const handleEdit = (event) => {
-    setEditingEvent(event)
-    setShowForm(true)
-  }
+    setEditingEvent(event);
+    setShowForm(true);
+  };
 
-  const handleSendEventsList = async () => {
-    if (selectedVolunteers.length === 0) {
-      setSendMessage("⚠️ Выберите волонтеров для отправки")
-      setTimeout(() => setSendMessage(""), 3000)
-      return
-    }
+const handleSendEventsList = async () => {
+  try {
+    setSendingList(true)
+    setSendMessage("")
 
-    try {
-      setSendingList(true)
-      setSendMessage("")
-      
-      const response = await fetch(`${API_URL}/api/bot/send-events-list`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${getToken()}`,
-        },
-        body: JSON.stringify({ volunteerIds: selectedVolunteers }),
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setSendMessage(`✅ Список отправлен ${data.sentTo} волонтерам`)
-        setSelectedVolunteers([])
-        setShowVolunteerModal(false)
-        setTimeout(() => setSendMessage(""), 3000)
-      } else {
-        setSendMessage("❌ Ошибка при отправке списка")
+    const response = await fetch(`${API_URL}/api/bot/send-events-list`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${getToken()}`,
       }
-    } catch (err) {
-      console.error("Error sending events list:", err)
-      setSendMessage("❌ Ошибка подключения")
-    } finally {
-      setSendingList(false)
-    }
-  }
+    })
 
-  const toggleVolunteerSelection = (volunteerId) => {
-    setSelectedVolunteers((prev) =>
-      prev.includes(volunteerId)
-        ? prev.filter((id) => id !== volunteerId)
-        : [...prev, volunteerId]
-    )
+    if (response.ok) {
+      setSendMessage("✅ Список отправлен во все группы")
+      setTimeout(() => setSendMessage(""), 3000)
+    } else {
+      setSendMessage("❌ Ошибка при отправке списка")
+    }
+  } catch (err) {
+    console.error("Error sending events list:", err)
+    setSendMessage("❌ Ошибка подключения")
+  } finally {
+    setSendingList(false)
   }
+}
+
 
   const filteredEvents = events.filter(
     (e) =>
       e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (e.location && e.location.toLowerCase().includes(searchTerm.toLowerCase())),
-  )
+      (e.location &&
+        e.location.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   const handleLogout = () => {
-    localStorage.removeItem("sleo_token")
-    localStorage.removeItem("sleo_telegram")
-    router.push("/")
-  }
+    localStorage.removeItem('sleo_token');
+    localStorage.removeItem('sleo_telegram');
+    router.push('/');
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-muted-foreground">Загрузка...</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -201,19 +169,23 @@ export default function EventsPage() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-4xl font-bold text-foreground">События</h1>
-              <p className="text-muted-foreground mt-1">Управление событиями SLEO</p>
+              <p className="text-muted-foreground mt-1">
+                Управление событиями SLEO
+              </p>
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={() => setShowVolunteerModal(true)}
+                onClick={handleSendEventsList}
+                disabled={sendingList}
                 className="bg-blue-600 hover:bg-blue-700 text-white w-fit"
               >
-                📢 Отправить список
+                {sendingList ? 'Отправляю...' : '📢 Отправить список'}
               </Button>
+
               <Button
                 onClick={() => {
-                  setEditingEvent(null)
-                  setShowForm(true)
+                  setEditingEvent(null);
+                  setShowForm(true);
                 }}
                 className="bg-primary hover:bg-primary/90 text-primary-foreground w-fit"
               >
@@ -226,63 +198,6 @@ export default function EventsPage() {
             <div className="mb-6 p-4 rounded-lg bg-muted text-foreground text-center">
               {sendMessage}
             </div>
-          )}
-
-          {showVolunteerModal && (
-            <Card className="mb-8 p-6 bg-muted">
-              <div className="mb-4">
-                <h2 className="text-2xl font-bold text-foreground mb-4">Выбрать волонтеров</h2>
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    onClick={() => setSelectedVolunteers(allVolunteers.map((v) => v.id))}
-                    className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                  >
-                    Выбрать всех
-                  </Button>
-                  <Button
-                    onClick={() => setSelectedVolunteers([])}
-                    className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                  >
-                    Снять выделение
-                  </Button>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Выбрано: {selectedVolunteers.length} / {allVolunteers.length}
-                </p>
-              </div>
-
-              <div className="max-h-64 overflow-y-auto border border-border rounded-lg p-4 mb-4 bg-background">
-                {allVolunteers.map((volunteer) => (
-                  <label key={volunteer.id} className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted rounded">
-                    <input
-                      type="checkbox"
-                      checked={selectedVolunteers.includes(volunteer.id)}
-                      onChange={() => toggleVolunteerSelection(volunteer.id)}
-                      className="w-4 h-4"
-                    />
-                    <span className="text-foreground">
-                      {volunteer.firstName} {volunteer.lastName} (@{volunteer.telegram})
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSendEventsList}
-                  disabled={sendingList || selectedVolunteers.length === 0}
-                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
-                >
-                  {sendingList ? "Отправляю..." : "Отправить"}
-                </Button>
-                <Button
-                  onClick={() => setShowVolunteerModal(false)}
-                  className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                >
-                  Отмена
-                </Button>
-              </div>
-            </Card>
           )}
 
           <div className="mb-6">
@@ -300,16 +215,20 @@ export default function EventsPage() {
                 event={editingEvent}
                 onSubmit={editingEvent ? handleUpdateEvent : handleAddEvent}
                 onCancel={() => {
-                  setShowForm(false)
-                  setEditingEvent(null)
+                  setShowForm(false);
+                  setEditingEvent(null);
                 }}
               />
             </Card>
           )}
 
-          <EventList events={filteredEvents} onEdit={handleEdit} onDelete={handleDeleteEvent} />
+          <EventList
+            events={filteredEvents}
+            onEdit={handleEdit}
+            onDelete={handleDeleteEvent}
+          />
         </div>
       </main>
     </div>
-  )
+  );
 }
