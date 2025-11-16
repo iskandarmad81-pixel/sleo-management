@@ -21,6 +21,7 @@ export default function EventsPage() {
   const [sendMessage, setSendMessage] = useState("")
   const [selectedVolunteers, setSelectedVolunteers] = useState([])
   const [allVolunteers, setAllVolunteers] = useState([])
+  const [showVolunteerModal, setShowVolunteerModal] = useState(false) // Added missing state for volunteer modal
   const router = useRouter()
 
   const getToken = () => localStorage.getItem("sleo_token")
@@ -225,6 +226,63 @@ export default function EventsPage() {
             <div className="mb-6 p-4 rounded-lg bg-muted text-foreground text-center">
               {sendMessage}
             </div>
+          )}
+
+          {showVolunteerModal && (
+            <Card className="mb-8 p-6 bg-muted">
+              <div className="mb-4">
+                <h2 className="text-2xl font-bold text-foreground mb-4">Выбрать волонтеров</h2>
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    onClick={() => setSelectedVolunteers(allVolunteers.map((v) => v.id))}
+                    className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  >
+                    Выбрать всех
+                  </Button>
+                  <Button
+                    onClick={() => setSelectedVolunteers([])}
+                    className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                  >
+                    Снять выделение
+                  </Button>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Выбрано: {selectedVolunteers.length} / {allVolunteers.length}
+                </p>
+              </div>
+
+              <div className="max-h-64 overflow-y-auto border border-border rounded-lg p-4 mb-4 bg-background">
+                {allVolunteers.map((volunteer) => (
+                  <label key={volunteer.id} className="flex items-center gap-3 p-2 cursor-pointer hover:bg-muted rounded">
+                    <input
+                      type="checkbox"
+                      checked={selectedVolunteers.includes(volunteer.id)}
+                      onChange={() => toggleVolunteerSelection(volunteer.id)}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-foreground">
+                      {volunteer.firstName} {volunteer.lastName} (@{volunteer.telegram})
+                    </span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleSendEventsList}
+                  disabled={sendingList || selectedVolunteers.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+                >
+                  {sendingList ? "Отправляю..." : "Отправить"}
+                </Button>
+                <Button
+                  onClick={() => setShowVolunteerModal(false)}
+                  className="bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                >
+                  Отмена
+                </Button>
+              </div>
+            </Card>
           )}
 
           <div className="mb-6">
