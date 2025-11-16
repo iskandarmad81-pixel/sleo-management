@@ -983,7 +983,7 @@ var _s = __turbopack_context__.k.signature();
 ;
 ;
 ;
-const API_URL = __TURBOPACK__imported__module__$5b$project$5d2f$sleo$2d$management$2f$node_modules$2f$next$2f$dist$2f$build$2f$polyfills$2f$process$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"].env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_URL = ("TURBOPACK compile-time value", "https://sleo-management-1.onrender.com") || 'http://localhost:5000';
 function EventsPage() {
     _s();
     const [events, setEvents] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$sleo$2d$management$2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$index$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useState"])([]);

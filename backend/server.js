@@ -7,7 +7,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const app = express();
-const cron = require("node-cron")
+const cron = require('node-cron');
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -349,54 +349,57 @@ app.post('/api/bot/send-events-list', authMiddleware, async (req, res) => {
   }
 });
 
-
-
-
 async function sendTomorrowReminders() {
   try {
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const yyyy = tomorrow.getFullYear()
-    const mm = String(tomorrow.getMonth() + 1).padStart(2, "0")
-    const dd = String(tomorrow.getDate()).padStart(2, "0")
-    const tomorrowDate = `${yyyy}-${mm}-${dd}`
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const yyyy = tomorrow.getFullYear();
+    const mm = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const dd = String(tomorrow.getDate()).padStart(2, '0');
+    const tomorrowDate = `${yyyy}-${mm}-${dd}`;
 
-    const events = await Event.find({ date: tomorrowDate })
+    const events = await Event.find({ date: tomorrowDate });
 
     if (events.length === 0) {
-      console.log("[BOT] Нет событий на завтра")
-      return
+      console.log('[BOT] Нет событий на завтра');
+      return;
     }
 
     // Формируем сообщение
-    let message = "<b>📢 Напоминание о событиях на завтра:</b>\n\n"
+    let message = '<b>📢 Напоминание о событиях на завтра:</b>\n\n';
     events.forEach((event, index) => {
-      message += `${index + 1}. <b>${event.name}</b>\n📅 ${event.date}\n📍 ${event.location || "Не указано"}\n\n`
-    })
+      message +=
+        `${index + 1}. <b>${event.name}</b>\n` +
+        `📅 ${event.date}\n` +
+        `📍 ${event.location || 'Не указано'}\n` +
+        `📝 ${event.description || 'Нет описания'}\n\n`;
+    });
 
-    const groupIds = (process.env.GROUP_IDS || "").split(",")
+    const groupIds = (process.env.GROUP_IDS || '').split(',');
 
     for (const chatId of groupIds) {
       try {
-        await bot.sendMessage(chatId, message, { parse_mode: "HTML" })
-        console.log(`[BOT] Reminder sent to group ${chatId}`)
+        await bot.sendMessage(chatId, message, { parse_mode: 'HTML' });
+        console.log(`[BOT] Reminder sent to group ${chatId}`);
       } catch (err) {
-        console.error(`[BOT] Failed to send reminder to group ${chatId}:`, err.message)
+        console.error(
+          `[BOT] Failed to send reminder to group ${chatId}:`,
+          err.message
+        );
       }
     }
   } catch (err) {
-    console.error("[BOT] Error sending tomorrow reminders:", err)
+    console.error('[BOT] Error sending tomorrow reminders:', err);
   }
 }
 
 // Каждый день в 9:00 утра
-cron.schedule("0 8 * * *", () => {
-  console.log("[BOT] Daily reminder triggered")
-  sendTomorrowReminders()
-})
+cron.schedule('0 8 * * *', () => {
+  console.log('[BOT] Daily reminder triggered');
+  sendTomorrowReminders();
+});
 
-sendTomorrowReminders()
-
+sendTomorrowReminders();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
