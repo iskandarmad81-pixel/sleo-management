@@ -9,17 +9,17 @@ dotenv.config()
 
 const app = express()
 
-// Middleware
+
 app.use(cors())
 app.use(express.json())
 
-// MongoDB Connection
+
 mongoose
   .connect(process.env.MONGODB_URI || "mongodb://localhost:27017/sleo")
   .then(() => console.log("MongoDB connected"))
   .catch((err) => console.error("MongoDB connection error:", err))
 
-// Models
+
 const userSchema = new mongoose.Schema({
   telegram: { type: String, unique: true, required: true },
   password: { type: String, required: true },
@@ -49,10 +49,10 @@ const User = mongoose.model("User", userSchema)
 const Volunteer = mongoose.model("Volunteer", volunteerSchema)
 const Event = mongoose.model("Event", eventSchema)
 
-// JWT Secret
+
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production"
 
-// Auth Middleware
+
 const authMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1]
   if (!token) return res.status(401).json({ error: "No token provided" })
